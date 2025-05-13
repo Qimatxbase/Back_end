@@ -5,40 +5,33 @@ from modules.funtion import normalize_url, remove_duplicates_by_url
 
 class MongoDBHandler:
     def __init__(self):
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
+        uri = os.getenv("MONGODB_URI")
         db_name = os.getenv("MONGODB_DBNAME", "Qimatx")
 
         print(f"[MongoDB] Connect to MongoDB: {uri}")
 
         try:
-            if uri.startswith("mongodb+srv://"):
-                client = MongoClient(
-                    uri,
-                    tls=True,
-                    tlsAllowInvalidCertificates=True,
-                    serverSelectionTimeoutMS=10000,
-                    connectTimeoutMS=10000,
-                )
-            else:
-                client = MongoClient(
-                    uri,
-                    tls=True,
-                    tlsAllowInvalidCertificates=True,
-                    serverSelectionTimeoutMS=10000,
-                    connectTimeoutMS=10000,
-                )
+            # Luôn dùng mongodb+srv
+            client = MongoClient(
+                uri,
+                tls=True,
+                tlsAllowInvalidCertificates=True,
+                serverSelectionTimeoutMS=10000,
+                connectTimeoutMS=10000,
+            )
 
             client.admin.command('ping')
             print("[MongoDB] Success")
 
             self.db = client[db_name]
             self.collection = self.db["articles"]
-
-            # Tạo index cho URL duy nhất
-            self.collection.create_index([("url", ASCENDING)], unique=True)
+            try:
+                self.collection.create_index([("url", ASCENDING)], unique=True)
+            except DuplicateKeyError:
+                print("[MongoDB] Warning: Duplicate index on url exists")
 
         except ServerSelectionTimeoutError as e:
-            print(f"Can't access {e}")
+            print(f"[MongoDB] Can't connect: {e}")
             raise
 
     def insert_articles(self, articles):
@@ -58,7 +51,7 @@ class MongoDBHandler:
 
     def get_articles(self, category=None, keyword=None):
         query = {}
-        # NEW: chuẩn hóa đầu vào khi query
+        # Chuẩn hóa đầu vào khi query
         if keyword:
             query["category"] = str(keyword).lower().replace(" ", "")
         elif category:
