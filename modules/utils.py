@@ -11,6 +11,7 @@ def get_news_dataframe(category: str = None, keyword: str = None) -> tuple[pd.Da
     news_handler = NewsAPIHandler()
     guardian_handler = GuardianAPIHandler()
     articles = []
+    
     if keyword:
         news_articles = news_handler.fetch_everything(query=keyword)
         for a in news_articles:
@@ -48,30 +49,17 @@ def get_news_dataframe(category: str = None, keyword: str = None) -> tuple[pd.Da
     return df, label
 
 def get_news_from_db(category=None, keyword=None):
-    query = {}
-    if keyword:
-        query["keyword"] = keyword.lower().strip().replace(" ", "")  
-    elif category:
-        query["category"] = category.lower().strip()
-
-    articles = list(db.collection.find(query).sort("date", -1))
-    for article in articles:
-        article["_id"] = str(article["_id"])
-    return articles
+    return db.get_articles(category=category, keyword=keyword)
 
 def get_news_dataframe_all_categories(categories=None) -> pd.DataFrame:
-
     data = list(db.collection.find())
     return pd.DataFrame(data)
 
-
 def api_compare():
-  
     articles = db.collection.find({})
-
     total_newsapi = 0
     total_guardian = 0
-    total_other =0
+    total_other = 0
 
     for article in articles:
         source = article.get("source", "")
@@ -79,8 +67,8 @@ def api_compare():
             total_newsapi += 1
         elif source == "The Guardian":
             total_guardian += 1
-        else :
-            total_other +=1
+        else:
+            total_other += 1
 
     label = "compare NewsAPI vs Guardian"
 
@@ -89,8 +77,9 @@ def api_compare():
         "total_newsapi": total_newsapi,
         "total_guardian": total_guardian,
         "total_other": total_other,
-        "total_combined": total_newsapi + total_guardian+ total_other
+        "total_combined": total_newsapi + total_guardian + total_other
     }
+
 def load_and_clean_data():
     data = list(db.collection.find())
     df = pd.DataFrame(data)
@@ -104,24 +93,19 @@ def load_and_clean_data():
     return df
 
 def get_data_chart1():
-    # Chart 1: các bài báo theo category
     df = load_and_clean_data()
     if df is None or "category" not in df:
         return None
     return {"count_by_category": df["category"].value_counts().to_dict()}
 
-
 def get_data_chart2():
-    # Chart 2: số bài báo theo ngày
     df = load_and_clean_data()
     if df is None or "date" not in df:
         return None
     df["date_only"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%Y-%m-%d")
     return {"count_by_date": df.groupby("date_only").size().to_dict()}
 
-
 def get_data_chart3():
-    # Chart 3: số bài báo thiếu author và đủ
     df = load_and_clean_data()
     if df is None or "author" not in df:
         return None
@@ -129,7 +113,6 @@ def get_data_chart3():
     count_with_author = df["has_author"].sum()
     count_without_author = len(df) - count_with_author
     return {"author_availability": {"with_author": int(count_with_author), "without_author": int(count_without_author)}}
-
 
 def get_data_chart4(df_all_categories=None):
     df = load_and_clean_data()
@@ -152,7 +135,6 @@ def get_data_chart5():
         return None
 
     grouped = df.groupby(["category", "source"]).size().reset_index(name='count')
-
     result = {}
     for category in grouped["category"].unique():
         temp = grouped[grouped["category"] == category]
