@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from modules.utils import get_news_dataframe, api_compare, get_news_from_db,get_data_chart1, get_data_chart2, get_data_chart3, get_data_chart4,get_news_dataframe_all_categories  
+from modules.utils import get_news_dataframe, api_compare, get_news_from_db,get_data_chart1, get_data_chart2, get_data_chart3, get_data_chart4, get_data_chart5,get_news_dataframe_all_categories  
 from modules.mongodb import MongoDBHandler
 
 app = Flask(__name__)
@@ -90,6 +90,12 @@ def chart4():
         return jsonify({"message": "No data found"}), 404
     return jsonify(result)
 
+@app.route("/chart5")
+def chart5():
+    result = get_data_chart5()
+    if result is None:
+        return jsonify({"message": "No data found"}), 404
+    return jsonify(result)
 # -------------------------------
 
 if __name__ == "__main__":

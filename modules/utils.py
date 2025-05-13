@@ -71,6 +71,7 @@ def api_compare():
 
     total_newsapi = 0
     total_guardian = 0
+    total_other =0
 
     for article in articles:
         source = article.get("source", "")
@@ -78,6 +79,8 @@ def api_compare():
             total_newsapi += 1
         elif source == "The Guardian":
             total_guardian += 1
+        else :
+            total_other +=1
 
     label = "compare NewsAPI vs Guardian"
 
@@ -85,7 +88,8 @@ def api_compare():
         "label": label,
         "total_newsapi": total_newsapi,
         "total_guardian": total_guardian,
-        "total_combined": total_newsapi + total_guardian
+        "total_other": total_other,
+        "total_combined": total_newsapi + total_guardian+ total_other
     }
 def load_and_clean_data():
     data = list(db.collection.find())
@@ -128,10 +132,30 @@ def get_data_chart3():
 
 
 def get_data_chart4(df_all_categories=None):
-    # Chart 4: trends in news articles (số lượng bài theo ngày)
     df = load_and_clean_data()
-    if df is None or "date" not in df:
+    if df is None or "date" not in df or "source" not in df:
         return None
+
     df["date_only"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    trends = df.groupby("date_only").size().sort_index().to_dict()
-    return {"news_article_trends": trends}
+    grouped = df.groupby(["source", "date_only"]).size().reset_index(name='count')
+
+    result = {}
+    for source in grouped["source"].unique():
+        temp = grouped[grouped["source"] == source]
+        result[source] = dict(zip(temp["date_only"], temp["count"]))
+
+    return {"news_article_trends": result}
+
+def get_data_chart5():
+    df = load_and_clean_data()
+    if df is None or "category" not in df or "source" not in df:
+        return None
+
+    grouped = df.groupby(["category", "source"]).size().reset_index(name='count')
+
+    result = {}
+    for category in grouped["category"].unique():
+        temp = grouped[grouped["category"] == category]
+        result[category] = dict(zip(temp["source"], temp["count"]))
+
+    return {"category_by_source": result}

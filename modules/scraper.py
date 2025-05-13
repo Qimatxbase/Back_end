@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 class Scraper:
     def __init__(self):
@@ -12,18 +13,30 @@ class Scraper:
         }
 
     def scrape_if_missing(self, article):
-        if article.get("content") and article.get("author"):
-            return {"content": article["content"], "author": article["author"]}
+        if article.get("content") and article.get("author") and article.get("date") and article.get("source"):
+            return {
+                "content": article["content"],
+                "author": article["author"],
+                "date": article["date"],
+                "source": article["source"]
+            }
 
         url = article.get("url")
         if not url:
-            return {"content": article.get("content"), "author": article.get("author")}
+            return {
+                "content": article.get("content"),
+                "author": article.get("author"),
+                "date": article.get("date"),
+                "source": article.get("source")
+            }
 
         scraped = self.scrape_article(url)
 
         return {
-            "content": article["content"] or scraped["content"],
-            "author": article["author"] or scraped["author"]
+            "content": article.get("content") or scraped["content"],
+            "author": article.get("author") or scraped["author"],
+            "date": article.get("date") or scraped["date"],
+            "source": article.get("source") or scraped["source"]
         }
 
     def scrape_article(self, url):
@@ -33,7 +46,7 @@ class Scraper:
 
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Ưu tiên article tag
+            # Extract content
             article_tags = soup.find_all("article")
             if article_tags:
                 content = ' '.join(tag.get_text(separator=' ', strip=True) for tag in article_tags)
@@ -58,10 +71,26 @@ class Scraper:
                 )
                 content = main_div.get_text(separator=' ', strip=True) if main_div else None
 
-            author_tag = soup.find("meta", attrs={"name": "author"})
+            # Extract author
+            author_tag = soup.find("meta", attrs={"name": "author"}) or \
+                         soup.find("meta", attrs={"property": "article:author"})
             author = author_tag["content"] if author_tag and "content" in author_tag.attrs else None
 
-            return {"content": content, "author": author}
+            # Extract date
+            date_tag = soup.find("meta", attrs={"property": "article:published_time"}) or \
+                       soup.find("meta", attrs={"name": "date"}) or \
+                       soup.find("meta", attrs={"name": "datePublished"})
+            date = date_tag["content"] if date_tag and "content" in date_tag.attrs else None
+
+            if not date:
+                time_tag = soup.find("time")
+                date = time_tag["datetime"] if time_tag and "datetime" in time_tag.attrs else None
+
+            # Extract source
+            source_tag = soup.find("meta", attrs={"property": "og:site_name"})
+            source = source_tag["content"] if source_tag and "content" in source_tag.attrs else urlparse(url).hostname
+
+            return {"content": content, "author": author, "date": date, "source": source}
 
         except Exception:
-            return {"content": None, "author": None}
+            return {"content": None, "author": None, "date": None, "source": None}

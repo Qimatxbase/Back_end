@@ -1,16 +1,16 @@
 import os
-from dotenv import load_dotenv
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
-from bson import ObjectId
 from modules.funtion import normalize_url, remove_duplicates_by_url
-
-load_dotenv()
 
 class MongoDBHandler:
     def __init__(self):
         uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
-        client = MongoClient(uri)
+        
+        if uri.startswith("mongodb+srv://"):
+            client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
+        else:
+            client = MongoClient(uri)
 
         db_name = os.getenv("MONGODB_DBNAME", "Qimatx")
         self.db = client[db_name]
@@ -25,7 +25,7 @@ class MongoDBHandler:
             try:
                 self.collection.insert_one(article)
             except DuplicateKeyError:
-                pass 
+                pass
 
     def get_articles(self, category=None, keyword=None):
         query = {}
