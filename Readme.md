@@ -94,6 +94,12 @@ npm start
 Frontend available at: [http://localhost:3000](http://localhost:3000)
 
 ---
+## Testing
+
+```bash
+pytest tests/test_all.py
+
+---
 
 ## Fully Terminal-Based Workflow (No VS Code needed)
 
