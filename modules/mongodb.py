@@ -1,22 +1,38 @@
 import os
 from pymongo import MongoClient, ASCENDING
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, ServerSelectionTimeoutError
 from modules.funtion import normalize_url, remove_duplicates_by_url
 
 class MongoDBHandler:
     def __init__(self):
         uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
-        
-        if uri.startswith("mongodb+srv://"):
-            client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
-        else:
-            client = MongoClient(uri)
-
         db_name = os.getenv("MONGODB_DBNAME", "Qimatx")
-        self.db = client[db_name]
-        self.collection = self.db["articles"]
 
-        self.collection.create_index([("url", ASCENDING)], unique=True)
+        try:
+            if uri.startswith("mongodb+srv://"):
+                client = MongoClient(
+                    uri,
+                    tls=True,
+                    tlsAllowInvalidCertificates=True,
+                    serverSelectionTimeoutMS=5000 
+                )
+            else:
+                client = MongoClient(
+                    uri,
+                    serverSelectionTimeoutMS=5000
+                )
+
+            self.db = client[db_name]
+            self.collection = self.db["articles"]
+
+            # thử kết nối ngay lập tức để kiểm tra
+            client.admin.command('ping')
+
+            self.collection.create_index([("url", ASCENDING)], unique=True)
+
+        except ServerSelectionTimeoutError as e:
+            print(f"Không thể kết nối tới MongoDB: {e}")
+            raise
 
     def insert_articles(self, articles):
         articles = remove_duplicates_by_url(articles)
