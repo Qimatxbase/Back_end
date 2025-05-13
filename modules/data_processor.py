@@ -16,13 +16,10 @@ class DataProcessor:
                 "category": category,
                 "url": api.get("url")
             })
+        columns = ["title", "author", "date", "content", "source", "category", "url"]
+        df = pd.DataFrame(rows, columns=columns)
 
-        df = pd.DataFrame(rows)
-        
         df.dropna(subset=["title"], inplace=True)
-
         df.drop_duplicates(subset=["url"], inplace=True)
-
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
         return df.reset_index(drop=True)
