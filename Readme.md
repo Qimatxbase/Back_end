@@ -97,6 +97,7 @@ Frontend available at: [http://localhost:3000](http://localhost:3000)
 ## Testing
 
 ```bash
+python -m pytest tests/test_all.py
 pytest tests/test_all.py
 
 ---

@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# import pytest
+import pytest
 from unittest.mock import patch
 # from modules.mongodb import MongoDBHandler
 from modules.funtion import normalize_url, remove_duplicates_by_url
