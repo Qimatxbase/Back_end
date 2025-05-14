@@ -96,6 +96,31 @@ def chart5():
     if result is None:
         return jsonify({"message": "No data found"}), 404
     return jsonify(result)
+# @app.route('/search-news', methods=['GET'])
+# def search_news():
+#     keyword = request.args.get('keyword', '')
+#     category = request.args.get('category', '')
+#     sort_by = request.args.get('sort_by', 'publishedAt')
+#     sort_order = request.args.get('sort_order', -1)  # -1 for descending
+    
+#     query = {}
+#     if keyword:
+#         query['$or'] = [
+#             {'title': {'$regex': keyword, '$options': 'i'}},
+#             {'description': {'$regex': keyword, '$options': 'i'}},
+#             {'content': {'$regex': keyword, '$options': 'i'}}
+#         ]
+    
+#     if category:
+#         query['category'] = category
+    
+#     try:
+#         news = list(mongodb_connection.collection.find(query).sort(sort_by, int(sort_order)))
+#         for item in news:
+#             item['_id'] = str(item['_id'])
+#         return jsonify({"status": "success", "data": news})
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)})
 # -------------------------------
 
 if __name__ == "__main__":
